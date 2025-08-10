@@ -5,14 +5,14 @@ import { Input } from "@/components/ui/input";
 import { useVault } from "../VaultContext";
 import { EncryptedVaultFile } from "../crypto";
 
-const FilePicker: React.FC<{ onPick: (file: File) => void }> = ({ onPick }) => {
+const FilePicker: React.FC<{ onPick: (file: File) => void; accept?: string; text?: string }> = ({ onPick, accept = "application/json,.json,.vault,.vault.json", text = "Wybierz plik sejfu" }) => {
   const ref = useRef<HTMLInputElement | null>(null);
   return (
     <>
       <input
         ref={ref}
         type="file"
-        accept="application/json,.json,.vault,.vault.json"
+        accept={accept}
         className="hidden"
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -20,7 +20,7 @@ const FilePicker: React.FC<{ onPick: (file: File) => void }> = ({ onPick }) => {
         }}
       />
       <Button variant="secondary" onClick={() => ref.current?.click()}>
-        Wybierz plik sejfu
+        {text}
       </Button>
     </>
   );
@@ -82,6 +82,34 @@ export const VaultUnlock: React.FC = () => {
           </Button>
         </CardContent>
       </Card>
+
+      <Card className="relative overflow-hidden">
+        <CardHeader>
+          <CardTitle>Import z CSV</CardTitle>
+          <CardDescription>Wgraj plik CSV (kolumny: title, username, url, password, notes).</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <CsvPicker />
+        </CardContent>
+      </Card>
     </section>
+  );
+};
+
+const CsvPicker: React.FC = () => {
+  const { importFromCsv } = useVault();
+  const [name, setName] = useState<string>("");
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <FilePicker
+        onPick={async (file) => {
+          const text = await file.text();
+          importFromCsv(text);
+        }}
+        accept="text/csv,.csv"
+        text="Wybierz plik CSV"
+      />
+      {name && <span className="text-sm text-muted-foreground">{name}</span>}
+    </div>
   );
 };

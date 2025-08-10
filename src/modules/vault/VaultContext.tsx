@@ -8,6 +8,7 @@ interface VaultContextValue {
   entries: VaultEntry[];
   createNew: (masterPassword: string) => void;
   importFromFile: (fileContent: EncryptedVaultFile, masterPassword: string) => Promise<void>;
+  importFromCsv: (csvText: string) => void;
   exportToFile: (masterPassword: string) => Promise<{ blob: Blob; filename: string }>;
   lock: () => void;
   addEntry: (entry: Omit<VaultEntry, "id" | "createdAt" | "updatedAt">) => void;
@@ -25,6 +26,46 @@ export const useVault = () => {
 
 function nowISO() {
   return new Date().toISOString();
+}
+
+function parseCsv(text: string): VaultEntry[] {
+  // very small CSV parser for comma-separated with optional quotes
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
+  const header = lines[0].split(",").map((h) => h.trim().replace(/^"|"$/g, ""));
+  const idx = (name: string) => header.findIndex((h) => h.toLowerCase() === name);
+  const iTitle = idx("title");
+  const iUser = idx("username");
+  const iUrl = idx("url");
+  const iPass = idx("password");
+  const iNotes = idx("notes");
+
+  const parseLine = (line: string): string[] => {
+    const out: string[] = [];
+    let cur = ""; let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQ && line[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = !inQ;
+      } else if (ch === ',' && !inQ) { out.push(cur); cur = ""; }
+      else cur += ch;
+    }
+    out.push(cur);
+    return out.map((v) => v.trim().replace(/^"|"$/g, ""));
+  };
+
+  const entries: VaultEntry[] = [];
+  for (let li = 1; li < lines.length; li++) {
+    const cols = parseLine(lines[li]);
+    const title = cols[iTitle] || `Wpis ${li}`;
+    const username = iUser >= 0 ? cols[iUser] : "";
+    const url = iUrl >= 0 ? cols[iUrl] : "";
+    const password = iPass >= 0 ? cols[iPass] : "";
+    const notes = iNotes >= 0 ? cols[iNotes] : "";
+    entries.push({ id: crypto.randomUUID(), title, username, url, password, notes, createdAt: nowISO(), updatedAt: nowISO() });
+  }
+  return entries;
 }
 
 export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -46,6 +87,12 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const vault = await decryptVault(fileContent, masterPassword);
     setData(vault);
     toast.success("Sejf odszyfrowany");
+  }, []);
+
+  const importFromCsv = useCallback((csvText: string) => {
+    const parsed = parseCsv(csvText);
+    setData({ entries: parsed });
+    toast.success(`Zaimportowano z CSV: ${parsed.length} wpisów`);
   }, []);
 
   const exportToFile = useCallback(async (masterPassword: string) => {
@@ -95,8 +142,8 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, []);
 
   const value = useMemo(
-    () => ({ locked, entries, createNew, importFromFile, exportToFile, lock, addEntry, updateEntry, deleteEntry }),
-    [locked, entries, createNew, importFromFile, exportToFile, lock, addEntry, updateEntry, deleteEntry]
+    () => ({ locked, entries, createNew, importFromFile, importFromCsv, exportToFile, lock, addEntry, updateEntry, deleteEntry }),
+    [locked, entries, createNew, importFromFile, importFromCsv, exportToFile, lock, addEntry, updateEntry, deleteEntry]
   );
 
   return <VaultContext.Provider value={value}>{children}</VaultContext.Provider>;

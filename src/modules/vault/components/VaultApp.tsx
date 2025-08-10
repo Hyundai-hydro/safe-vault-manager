@@ -67,6 +67,8 @@ export const VaultApp: React.FC = () => {
   const [editEntry, setEditEntry] = useState<VaultEntry | null>(null);
   const [genLen, setGenLen] = useState(16);
   const [genOpts, setGenOpts] = useState({ lower: true, upper: true, digits: true, symbols: false });
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [exportPass, setExportPass] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -101,8 +103,7 @@ export const VaultApp: React.FC = () => {
     setEditEntry(null);
   };
 
-  const handleExport = async () => {
-    const master = prompt("Podaj hasło główne do zaszyfrowania pliku:") ?? "";
+  const handleExportNow = async (master: string) => {
     try {
       const { blob, filename } = await exportToFile(master);
       const a = document.createElement("a");
@@ -130,7 +131,33 @@ export const VaultApp: React.FC = () => {
         <h2 className="text-2xl font-semibold">Twój sejf</h2>
         <div className="flex gap-2">
           <Input placeholder="Szukaj..." value={query} onChange={(e) => setQuery(e.target.value)} />
-          <Button variant="secondary" onClick={handleExport}>Eksportuj</Button>
+          <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="secondary">Eksportuj</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Eksport sejfu</DialogTitle>
+              </DialogHeader>
+              <form
+                className="grid gap-4"
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  await handleExportNow(exportPass);
+                  setIsExportOpen(false);
+                  setExportPass("");
+                }}
+              >
+                <div className="grid gap-2">
+                  <Label htmlFor="export-pass">Hasło główne</Label>
+                  <Input id="export-pass" type="password" value={exportPass} onChange={(e) => setExportPass(e.target.value)} required />
+                </div>
+                <DialogFooter>
+                  <Button type="submit">Zapisz plik</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
           <Button variant="outline" onClick={lock}>Zablokuj</Button>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
