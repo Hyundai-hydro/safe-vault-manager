@@ -16,6 +16,15 @@
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@lovable_dev" />
     <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <script>
+      window.SUPABASE_URL = "https://ntlwbaoweompsxjytqal.supabase.co";
+      window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im50bHdiYW93ZW9tcHN4anl0cWFsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ4OTE2ODksImV4cCI6MjA3MDQ2NzY4OX0.z2WMnf8U2rT2iMdW9KIwWbGowROg2gcFFfDEAeu8c_c";
+      try {
+        const ls = localStorage;
+        if (!ls.getItem('supabase.url')) ls.setItem('supabase.url', window.SUPABASE_URL);
+        if (!ls.getItem('supabase.anon')) ls.setItem('supabase.anon', window.SUPABASE_ANON_KEY);
+      } catch (e) {}
+    </script>
   </head>
 
   <body>
