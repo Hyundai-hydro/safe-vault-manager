@@ -3,6 +3,7 @@
 ## Project info
 
 **URL**: https://lovable.dev/projects/3c6b949a-acb7-469c-89e7-40206acff161
+**website**: (polski) https://safe-vault-manager.lovable.app
 
 ## How can I edit this code?
 
