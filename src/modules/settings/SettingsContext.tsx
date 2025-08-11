@@ -16,6 +16,11 @@ type SettingsContextValue = {
   resetColors: () => void;
   discordWebhook: string;
   setDiscordWebhook: (url: string) => void;
+  // Supabase public config (safe to store)
+  supabaseUrl: string;
+  setSupabaseUrl: (url: string) => void;
+  supabaseAnonKey: string;
+  setSupabaseAnonKey: (key: string) => void;
 };
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -71,6 +76,8 @@ function applyColors(colors: CustomColors) {
 const LS_THEME = "settings.theme";
 const LS_COLORS = "settings.colors";
 const LS_WEBHOOK = "settings.discordWebhook";
+const LS_SUPA_URL = "supabase.url"; // public
+const LS_SUPA_ANON = "supabase.anon"; // public
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem(LS_THEME) as Theme) || "light");
@@ -78,25 +85,33 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     try { return JSON.parse(localStorage.getItem(LS_COLORS) || "{}") as CustomColors; } catch { return {}; }
   });
   const [discordWebhook, setDiscordWebhookState] = useState<string>(() => localStorage.getItem(LS_WEBHOOK) || "");
+  const [supabaseUrl, setSupabaseUrl] = useState<string>(() => localStorage.getItem(LS_SUPA_URL) || (window as any).SUPABASE_URL || "");
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState<string>(() => localStorage.getItem(LS_SUPA_ANON) || (window as any).SUPABASE_ANON_KEY || "");
 
   useEffect(() => { applyTheme(theme); localStorage.setItem(LS_THEME, theme); }, [theme]);
   useEffect(() => { applyColors(colors); localStorage.setItem(LS_COLORS, JSON.stringify(colors)); }, [colors]);
   useEffect(() => { localStorage.setItem(LS_WEBHOOK, discordWebhook); }, [discordWebhook]);
+  useEffect(() => { localStorage.setItem(LS_SUPA_URL, supabaseUrl); }, [supabaseUrl]);
+  useEffect(() => { localStorage.setItem(LS_SUPA_ANON, supabaseAnonKey); }, [supabaseAnonKey]);
 
-  const value = useMemo<SettingsContextValue>(() => ({
-    theme,
-    setTheme: setThemeState,
-    colors,
-    setPrimaryHex: (hex) => {
-      const hsl = hexToHslString(hex); if (!hsl) return; setColors((c) => ({ ...c, primary: hsl }));
-    },
-    setAccentHex: (hex) => {
-      const hsl = hexToHslString(hex); if (!hsl) return; setColors((c) => ({ ...c, accent: hsl }));
-    },
-    resetColors: () => setColors({}),
-    discordWebhook,
-    setDiscordWebhook: setDiscordWebhookState,
-  }), [theme, colors, discordWebhook]);
+const value = useMemo<SettingsContextValue>(() => ({
+  theme,
+  setTheme: setThemeState,
+  colors,
+  setPrimaryHex: (hex) => {
+    const hsl = hexToHslString(hex); if (!hsl) return; setColors((c) => ({ ...c, primary: hsl }));
+  },
+  setAccentHex: (hex) => {
+    const hsl = hexToHslString(hex); if (!hsl) return; setColors((c) => ({ ...c, accent: hsl }));
+  },
+  resetColors: () => setColors({}),
+  discordWebhook,
+  setDiscordWebhook: setDiscordWebhookState,
+  supabaseUrl,
+  setSupabaseUrl,
+  supabaseAnonKey,
+  setSupabaseAnonKey,
+}), [theme, colors, discordWebhook, supabaseUrl, supabaseAnonKey]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 };

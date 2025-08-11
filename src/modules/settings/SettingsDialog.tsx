@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { chimeSuccess, errorTone, warn } from "./sound";
 
 export const SettingsDialog: React.FC = () => {
-  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook } = useSettings();
+  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey } = useSettings();
   const { entries } = useVault();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -66,6 +66,22 @@ export const SettingsDialog: React.FC = () => {
 
           <Separator />
 
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold">Supabase (publiczne)</h3>
+            <p className="text-xs text-muted-foreground">Wprowadź URL projektu i publiczny anon key. Klucze są zapisywane lokalnie.</p>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>SUPABASE URL</Label>
+                <Input placeholder="https://xyz.supabase.co" value={supabaseUrl} onChange={(e) => setSupabaseUrl(e.target.value)} />
+              </div>
+              <div className="grid gap-2">
+                <Label>SUPABASE ANON KEY</Label>
+                <Input placeholder="ey..." value={supabaseAnonKey} onChange={(e) => setSupabaseAnonKey(e.target.value)} />
+              </div>
+            </div>
+          </section>
+
+          <Separator />
           <section className="space-y-3">
             <h3 className="text-sm font-semibold">Wyślij hasła na Discord</h3>
             <Alert>

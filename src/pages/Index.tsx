@@ -4,9 +4,13 @@ import { VaultUnlock } from "@/modules/vault/components/VaultUnlock";
 import { VaultApp } from "@/modules/vault/components/VaultApp";
 import { useVault } from "@/modules/vault/VaultContext";
 import { SettingsDialog } from "@/modules/settings/SettingsDialog";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/modules/auth/AuthContext";
+import { Link } from "react-router-dom";
 
 const HomeContent: React.FC = () => {
   const { locked } = useVault();
+  const { user, signOut } = useAuth();
   const ref = useRef<HTMLDivElement | null>(null);
 
   return (
@@ -30,8 +34,15 @@ const HomeContent: React.FC = () => {
         <p className="text-lg text-muted-foreground mt-4 mx-auto max-w-2xl">
           Szyfrowanie AES‑256 w Twojej przeglądarce. Import/eksport sejfu i generator silnych haseł.
         </p>
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex justify-center gap-3">
           <SettingsDialog />
+          {user ? (
+            <Button variant="secondary" onClick={signOut}>Wyloguj</Button>
+          ) : (
+            <Button asChild>
+              <Link to="/auth">Zaloguj / Zarejestruj</Link>
+            </Button>
+          )}
         </div>
         <div className="mx-auto mt-10 max-w-5xl">
           {locked ? <VaultUnlock /> : <VaultApp />}
