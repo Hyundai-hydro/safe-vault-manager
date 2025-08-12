@@ -1,4 +1,4 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { decryptVault, encryptVault, EncryptedVaultFile } from "./crypto";
 import { VaultData, VaultEntry } from "./types";
@@ -71,8 +71,38 @@ function parseCsv(text: string): VaultEntry[] {
 export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [data, setData] = useState<VaultData | null>(null);
 
-  const locked = !data;
   const entries = data?.entries ?? [];
+  const locked = !data;
+
+  // Auto-backup toggle from localStorage (enabled by default)
+  const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(() => {
+    try { return localStorage.getItem('settings.autoBackup') !== 'false'; } catch { return true; }
+  });
+
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'settings.autoBackup') {
+        setAutoBackupEnabled(e.newValue !== 'false');
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
+  useEffect(() => {
+    if (!autoBackupEnabled) return;
+    if (!data) return;
+    const save = () => {
+      try {
+        localStorage.setItem('vault.backup', JSON.stringify({ entries }));
+        localStorage.setItem('vault.backupAt', new Date().toISOString());
+      } catch {}
+    };
+    // Save immediately and then every 5 minutes
+    save();
+    const id = window.setInterval(save, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [autoBackupEnabled, data, entries]);
 
   const createNew = useCallback((masterPassword: string) => {
     if (!masterPassword) {

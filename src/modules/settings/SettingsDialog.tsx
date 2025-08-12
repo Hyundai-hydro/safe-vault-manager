@@ -10,10 +10,13 @@ import { useVault } from "@/modules/vault/VaultContext";
 import { toast } from "sonner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { chimeSuccess, errorTone, warn } from "./sound";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useAuth } from "@/modules/auth/AuthContext";
 export const SettingsDialog: React.FC = () => {
-  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey } = useSettings();
+  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey, font, setFont, smallCaps, setSmallCaps, autoBackup, setAutoBackup } = useSettings();
   const { entries } = useVault();
+  const { user, enabled } = useAuth();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -67,6 +70,45 @@ export const SettingsDialog: React.FC = () => {
           <Separator />
 
           <section className="space-y-3">
+            <h3 className="text-sm font-semibold">Typografia</h3>
+            <div className="grid md:grid-cols-2 gap-4 items-end">
+              <div className="grid gap-2">
+                <Label>Krój interfejsu</Label>
+                <Select value={font} onValueChange={(v) => setFont(v as any)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Wybierz font" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inter">Inter (Sans)</SelectItem>
+                    <SelectItem value="playfair">Playfair Display (Serif)</SelectItem>
+                    <SelectItem value="cormorant">Cormorant SC (Small Caps Serif)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center justify-between gap-4">
+                <div className="grid gap-1">
+                  <Label>Małe kapitaliki (small caps) dla nagłówków</Label>
+                  <p className="text-xs text-muted-foreground">Aktywuje font-variant-caps: small-caps</p>
+                </div>
+                <Switch checked={smallCaps} onCheckedChange={setSmallCaps} />
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold">Kopia zapasowa</h3>
+            <div className="flex items-center justify-between gap-4">
+              <div className="grid gap-1">
+                <Label>Auto‑kopia sejfu co 5 minut (lokalnie)</Label>
+                <p className="text-xs text-muted-foreground">Zapis do localStorage. Ostatnia: {localStorage.getItem('vault.backupAt') || '—'}</p>
+              </div>
+              <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
+            </div>
+          </section>
+
+          <section className="space-y-3">
             <h3 className="text-sm font-semibold">Supabase (publiczne)</h3>
             <p className="text-xs text-muted-foreground">Wprowadź URL projektu i publiczny anon key. Klucze są zapisywane lokalnie.</p>
             <div className="grid md:grid-cols-2 gap-4">
@@ -93,10 +135,10 @@ export const SettingsDialog: React.FC = () => {
                 <Label>URL webhooka Discord</Label>
                 <Input placeholder="https://discord.com/api/webhooks/..." value={discordWebhook} onChange={(e) => setDiscordWebhook(e.target.value)} />
               </div>
-              <AlertDialog open={confirmOpen} onOpenChange={(o) => { setConfirmOpen(o); if (o) warn(); }}>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={!discordWebhook}>Wyślij</Button>
-                </AlertDialogTrigger>
+               <AlertDialog open={confirmOpen} onOpenChange={(o) => { setConfirmOpen(o); if (o) warn(); }}>
+                 <AlertDialogTrigger asChild>
+                   <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={!discordWebhook || entries.length === 0}>Wyślij</Button>
+                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-destructive">UWAGA! Wysyłasz WSZYSTKIE HASŁA</AlertDialogTitle>
@@ -108,14 +150,24 @@ export const SettingsDialog: React.FC = () => {
                     <AlertDialogCancel>Anuluj</AlertDialogCancel>
                     <AlertDialogAction onClick={async () => {
                       try {
-                        // Discord webhook expects { content }
-                        const content = '```csv\n' + csvData.slice(0, 1900) + '\n```';
-                        await fetch(discordWebhook, {
-                          method: 'POST',
-                          mode: 'no-cors',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ content }),
-                        });
+                        // Discord webhook expects { content } ; we chunk to avoid 2000 char limit
+                        const chunks: string[] = [];
+                        const csv = csvData;
+                        const max = 1800; // leave room for code fences
+                        for (let i = 0; i < csv.length; i += max) {
+                          chunks.push(csv.slice(i, i + max));
+                        }
+                        for (const [idx, part] of chunks.entries()) {
+                          const content = '```csv\n' + part + '\n```' + (chunks.length > 1 ? `\nCzęść ${idx + 1}/${chunks.length}` : '');
+                          await fetch(discordWebhook, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ content }),
+                          });
+                          // tiny gap to avoid rate limits
+                          await new Promise(r => setTimeout(r, 400));
+                        }
                         chimeSuccess();
                         toast("Żądanie wysłane do Discord. Sprawdź historię kanału.");
                       } catch (e) {

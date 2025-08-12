@@ -21,6 +21,14 @@ type SettingsContextValue = {
   setSupabaseUrl: (url: string) => void;
   supabaseAnonKey: string;
   setSupabaseAnonKey: (key: string) => void;
+  // Typography
+  font: 'inter' | 'playfair' | 'cormorant';
+  setFont: (f: 'inter' | 'playfair' | 'cormorant') => void;
+  smallCaps: boolean;
+  setSmallCaps: (on: boolean) => void;
+  // Local auto backup every 5 min
+  autoBackup: boolean;
+  setAutoBackup: (on: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -78,6 +86,9 @@ const LS_COLORS = "settings.colors";
 const LS_WEBHOOK = "settings.discordWebhook";
 const LS_SUPA_URL = "supabase.url"; // public
 const LS_SUPA_ANON = "supabase.anon"; // public
+const LS_FONT = "settings.font";
+const LS_SMALLCAPS = "settings.smallCaps";
+const LS_AUTOBACKUP = "settings.autoBackup";
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem(LS_THEME) as Theme) || "light");
@@ -87,12 +98,35 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [discordWebhook, setDiscordWebhookState] = useState<string>(() => localStorage.getItem(LS_WEBHOOK) || "");
   const [supabaseUrl, setSupabaseUrl] = useState<string>(() => localStorage.getItem(LS_SUPA_URL) || (window as any).SUPABASE_URL || "");
   const [supabaseAnonKey, setSupabaseAnonKey] = useState<string>(() => localStorage.getItem(LS_SUPA_ANON) || (window as any).SUPABASE_ANON_KEY || "");
+  const [font, setFontState] = useState<'inter'|'playfair'|'cormorant'>(() => (localStorage.getItem(LS_FONT) as any) || 'inter');
+  const [smallCaps, setSmallCapsState] = useState<boolean>(() => localStorage.getItem(LS_SMALLCAPS) === 'true');
+  const [autoBackup, setAutoBackupState] = useState<boolean>(() => localStorage.getItem(LS_AUTOBACKUP) !== 'false');
 
   useEffect(() => { applyTheme(theme); localStorage.setItem(LS_THEME, theme); }, [theme]);
   useEffect(() => { applyColors(colors); localStorage.setItem(LS_COLORS, JSON.stringify(colors)); }, [colors]);
   useEffect(() => { localStorage.setItem(LS_WEBHOOK, discordWebhook); }, [discordWebhook]);
   useEffect(() => { localStorage.setItem(LS_SUPA_URL, supabaseUrl); }, [supabaseUrl]);
   useEffect(() => { localStorage.setItem(LS_SUPA_ANON, supabaseAnonKey); }, [supabaseAnonKey]);
+
+  // Typography effects
+  useEffect(() => {
+    localStorage.setItem(LS_FONT, font);
+    const root = document.documentElement.style;
+    const map: Record<'inter'|'playfair'|'cormorant', string> = {
+      inter: 'Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial',
+      playfair: "'Playfair Display', serif",
+      cormorant: "'Cormorant SC', serif",
+    };
+    root.setProperty('--font-ui', map[font]);
+  }, [font]);
+  useEffect(() => {
+    localStorage.setItem(LS_SMALLCAPS, String(smallCaps));
+    document.documentElement.style.setProperty('--font-variant', smallCaps ? 'small-caps' : 'normal');
+  }, [smallCaps]);
+  useEffect(() => {
+    localStorage.setItem(LS_AUTOBACKUP, String(autoBackup));
+    try { localStorage.setItem('settings.autoBackup', String(autoBackup)); } catch {}
+  }, [autoBackup]);
 
 const value = useMemo<SettingsContextValue>(() => ({
   theme,
@@ -111,7 +145,13 @@ const value = useMemo<SettingsContextValue>(() => ({
   setSupabaseUrl,
   supabaseAnonKey,
   setSupabaseAnonKey,
-}), [theme, colors, discordWebhook, supabaseUrl, supabaseAnonKey]);
+  font,
+  setFont: setFontState,
+  smallCaps,
+  setSmallCaps: setSmallCapsState,
+  autoBackup,
+  setAutoBackup: setAutoBackupState,
+}), [theme, colors, discordWebhook, supabaseUrl, supabaseAnonKey, font, smallCaps, autoBackup]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 };
