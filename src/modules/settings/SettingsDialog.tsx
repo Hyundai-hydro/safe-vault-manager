@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -16,9 +16,10 @@ import { useAuth } from "@/modules/auth/AuthContext";
 export const SettingsDialog: React.FC = () => {
   const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey, font, setFont, smallCaps, setSmallCaps, autoBackup, setAutoBackup } = useSettings();
   const { entries } = useVault();
-  const { user, enabled } = useAuth();
+  const { user, enabled, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const alarmTimer = useRef<number | null>(null);
 
   const csvData = useMemo(() => {
     const header = ["title","username","url","password","notes","createdAt"].join(",");
@@ -31,7 +32,7 @@ export const SettingsDialog: React.FC = () => {
       <DialogTrigger asChild>
         <Button variant="outline">Ustawienia</Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Ustawienia aplikacji</DialogTitle>
         </DialogHeader>
@@ -125,6 +126,55 @@ export const SettingsDialog: React.FC = () => {
 
           <Separator />
           <section className="space-y-3">
+            <h3 className="text-sm font-semibold">Konto</h3>
+            {enabled && user ? (
+              <div className="rounded-md border p-4">
+                <p className="text-sm text-muted-foreground">Strefa wysokiego ryzyka: usunięcie konta zwalnia e‑mail do ponownego użycia.</p>
+                <div className="mt-3">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        onMouseEnter={() => { if (!alarmTimer.current) { warn(); alarmTimer.current = window.setInterval(() => warn(), 700) as any; } }}
+                        onMouseLeave={() => { if (alarmTimer.current) { clearInterval(alarmTimer.current); alarmTimer.current = null; } }}
+                      >
+                        Usuń konto
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-destructive">Trwałe usunięcie konta</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Operacja wymaga zaplecza (Supabase native integration). W tej wersji aplikacji z poziomu przeglądarki nie można bezpiecznie usunąć konta.
+                          Połącz projekt z Supabase, a ja skonfiguruję funkcję usuwania.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={async () => {
+                            try {
+                              errorTone();
+                              toast.error("Aby trwale usunąć konto, podłącz natywną integrację Supabase i pozwól mi dodać funkcję backend.");
+                            } finally {
+                              await signOut();
+                              setOpen(false);
+                            }
+                          }}
+                        >
+                          Rozumiem – wyloguj
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Zaloguj się, aby zarządzać kontem.</p>
+            )}
+          </section>
+          <Separator />
+          <section className="space-y-3">
             <h3 className="text-sm font-semibold">Wyślij hasła na Discord</h3>
             <Alert>
               <AlertTitle>Ostrożnie</AlertTitle>
@@ -134,6 +184,10 @@ export const SettingsDialog: React.FC = () => {
               <div className="md:col-span-2 grid gap-2">
                 <Label>URL webhooka Discord</Label>
                 <Input placeholder="https://discord.com/api/webhooks/..." value={discordWebhook} onChange={(e) => setDiscordWebhook(e.target.value)} />
+                <div className="flex gap-2">
+                  <Button variant="secondary" type="button" onClick={async () => { try { await navigator.clipboard.writeText(csvData); chimeSuccess(); toast("Skopiowano CSV do schowka"); } catch { errorTone(); toast.error("Nie udało się skopiować"); } }}>Skopiuj CSV</Button>
+                  <Button variant="outline" type="button" onClick={() => { try { const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'vault-export.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); chimeSuccess(); toast("Pobrano CSV"); } catch { errorTone(); toast.error("Nie udało się pobrać"); } }}>Pobierz CSV</Button>
+                </div>
               </div>
                <AlertDialog open={confirmOpen} onOpenChange={(o) => { setConfirmOpen(o); if (o) warn(); }}>
                  <AlertDialogTrigger asChild>
@@ -162,8 +216,7 @@ export const SettingsDialog: React.FC = () => {
                           await fetch(discordWebhook, {
                             method: 'POST',
                             mode: 'no-cors',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ content }),
+                            body: (() => { const fd = new FormData(); fd.append('content', content); return fd; })(),
                           });
                           // tiny gap to avoid rate limits
                           await new Promise(r => setTimeout(r, 400));
