@@ -16,7 +16,7 @@ import { useAuth } from "@/modules/auth/AuthContext";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 export const SettingsDialog: React.FC = () => {
-  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey, font, setFont, smallCaps, setSmallCaps, autoBackup, setAutoBackup, language, setLanguage } = useSettings();
+  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey, font, setFont, smallCaps, setSmallCaps, autoBackup, setAutoBackup, language, setLanguage, idleLockMinutes, setIdleLockMinutes, panicKeyEnabled, setPanicKeyEnabled, clipboardClearMs, setClipboardClearMs, privacyBlur, setPrivacyBlur } = useSettings();
   const { entries } = useVault();
   const { user, enabled, signOut } = useAuth();
   const [open, setOpen] = useState(false);
@@ -46,6 +46,7 @@ export const SettingsDialog: React.FC = () => {
             <TabsTrigger value="typography">Typografia</TabsTrigger>
             <TabsTrigger value="language">Język</TabsTrigger>
             <TabsTrigger value="backup">Kopia</TabsTrigger>
+            <TabsTrigger value="security">Bezpieczeństwo</TabsTrigger>
             <TabsTrigger value="integrations">Integracje</TabsTrigger>
             <TabsTrigger value="account">Konto</TabsTrigger>
             <TabsTrigger value="export">Eksport</TabsTrigger>
@@ -141,6 +142,66 @@ export const SettingsDialog: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Zapis do localStorage. Ostatnia: {localStorage.getItem('vault.backupAt') || '—'}</p>
                 </div>
                 <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
+              </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6 animate-fade-in">
+            <section className="space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div className="grid gap-1">
+                  <Label>Auto‑blokada po bezczynności</Label>
+                  <p className="text-xs text-muted-foreground">Zablokuj sejf po upływie czasu bez interakcji. Ustaw 0 aby wyłączyć.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    className="w-28"
+                    min={0}
+                    value={idleLockMinutes}
+                    onChange={(e) => setIdleLockMinutes(Math.max(0, parseInt(e.target.value || '0', 10)))}
+                  />
+                  <span className="text-sm text-muted-foreground">min</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="grid gap-1">
+                  <Label>Klawisz paniki</Label>
+                  <p className="text-xs text-muted-foreground">Podwójny Escape lub Ctrl+Shift+L natychmiast blokuje sejf.</p>
+                </div>
+                <Switch checked={panicKeyEnabled} onCheckedChange={setPanicKeyEnabled} />
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="grid gap-1">
+                  <Label>Automatyczne czyszczenie schowka</Label>
+                  <p className="text-xs text-muted-foreground">Po skopiowaniu hasła, schowek zostanie nadpisany po czasie. 0 = wyłączone.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    className="w-28"
+                    min={0}
+                    value={Math.round(clipboardClearMs / 1000)}
+                    onChange={(e) => setClipboardClearMs(Math.max(0, parseInt(e.target.value || '0', 10)) * 1000)}
+                  />
+                  <span className="text-sm text-muted-foreground">sek</span>
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="flex items-center justify-between gap-4">
+                <div className="grid gap-1">
+                  <Label>Prywatność: rozmycie przy utracie fokusu</Label>
+                  <p className="text-xs text-muted-foreground">Gdy okno utraci fokus lub zostanie zminimalizowane, interfejs zostanie subtelnie rozmyty.</p>
+                </div>
+                <Switch checked={privacyBlur} onCheckedChange={setPrivacyBlur} />
               </div>
             </section>
           </TabsContent>

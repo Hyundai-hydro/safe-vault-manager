@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { useVault } from "../VaultContext";
 import { VaultEntry } from "../types";
 import { toast } from "sonner";
+import { useSettings } from "@/modules/settings/SettingsContext";
 
 function generatePassword(length: number, opts: { lower: boolean; upper: boolean; digits: boolean; symbols: boolean }): string {
   const lowers = "abcdefghijklmnopqrstuvwxyz";

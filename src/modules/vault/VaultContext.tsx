@@ -1,7 +1,9 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { decryptVault, encryptVault, EncryptedVaultFile } from "./crypto";
 import { VaultData, VaultEntry } from "./types";
+import { useSettings } from "@/modules/settings/SettingsContext";
+
 
 interface VaultContextValue {
   locked: boolean;
@@ -74,6 +76,10 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const entries = data?.entries ?? [];
   const locked = !data;
 
+  const { idleLockMinutes, panicKeyEnabled } = useSettings();
+  const idleTimer = useRef<number | null>(null);
+  const lastEscAt = useRef<number>(0);
+
   // Auto-backup toggle from localStorage (enabled by default)
   const [autoBackupEnabled, setAutoBackupEnabled] = useState<boolean>(() => {
     try { return localStorage.getItem('settings.autoBackup') !== 'false'; } catch { return true; }
@@ -104,6 +110,44 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return () => clearInterval(id);
   }, [autoBackupEnabled, data, entries]);
 
+  const lock = useCallback(() => {
+    setData(null);
+    toast("Sejf zablokowany");
+  }, []);
+
+  // Idle auto-lock
+  useEffect(() => {
+    if (locked || idleLockMinutes <= 0) return;
+    const reset = () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      idleTimer.current = window.setTimeout(() => {
+        try { lock(); } catch {}
+      }, idleLockMinutes * 60 * 1000) as any;
+    };
+    const events: Array<keyof WindowEventMap> = ['mousemove','keydown','click','scroll','touchstart'];
+    events.forEach((ev) => window.addEventListener(ev, reset, { passive: true } as any));
+    reset();
+    return () => {
+      if (idleTimer.current) clearTimeout(idleTimer.current);
+      events.forEach((ev) => window.removeEventListener(ev, reset as any));
+    };
+  }, [locked, idleLockMinutes, lock]);
+
+  // Panic key (Esc twice quickly or Ctrl+Shift+L)
+  useEffect(() => {
+    if (!panicKeyEnabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && String(e.key).toLowerCase() === 'l') { e.preventDefault(); lock(); return; }
+      if (e.key === 'Escape') {
+        const now = Date.now();
+        if (now - lastEscAt.current < 500) { lock(); }
+        lastEscAt.current = now;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [panicKeyEnabled, lock]);
+
   const createNew = useCallback((masterPassword: string) => {
     if (!masterPassword) {
       toast.error("Podaj hasło główne");
@@ -133,11 +177,6 @@ export const VaultProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const filename = `vault-${new Date().toISOString().slice(0, 10)}.vault.json`;
     return { blob, filename };
   }, [data]);
-
-  const lock = useCallback(() => {
-    setData(null);
-    toast("Sejf zablokowany");
-  }, []);
 
   const addEntry = useCallback((entry: Omit<VaultEntry, "id" | "createdAt" | "updatedAt">) => {
     setData((prev) => {

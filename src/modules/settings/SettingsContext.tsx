@@ -34,6 +34,15 @@ type SettingsContextValue = {
   // Local auto backup every 5 min
   autoBackup: boolean;
   setAutoBackup: (on: boolean) => void;
+  // Security helpers
+  idleLockMinutes: number; // 0 = disabled
+  setIdleLockMinutes: (m: number) => void;
+  panicKeyEnabled: boolean;
+  setPanicKeyEnabled: (on: boolean) => void;
+  clipboardClearMs: number; // 0 = disabled
+  setClipboardClearMs: (ms: number) => void;
+  privacyBlur: boolean;
+  setPrivacyBlur: (on: boolean) => void;
 };
 
 const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -95,6 +104,10 @@ const LS_FONT = "settings.font";
 const LS_SMALLCAPS = "settings.smallCaps";
 const LS_AUTOBACKUP = "settings.autoBackup";
 const LS_LANG = "settings.lang";
+const LS_IDLE_LOCK = "settings.idleLockMin";
+const LS_PANIC = "settings.panicKey";
+const LS_CLIP_MS = "settings.clipboardClearMs";
+const LS_PRIVBLUR = "settings.privacyBlur";
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem(LS_THEME) as Theme) || "light");
@@ -108,6 +121,17 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [smallCaps, setSmallCapsState] = useState<boolean>(() => localStorage.getItem(LS_SMALLCAPS) === 'true');
   const [autoBackup, setAutoBackupState] = useState<boolean>(() => localStorage.getItem(LS_AUTOBACKUP) !== 'false');
   const [language, setLanguageState] = useState<Language>(() => (localStorage.getItem(LS_LANG) as Language) || 'pl');
+  // Security
+  const [idleLockMinutes, setIdleLockMinutes] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem(LS_IDLE_LOCK) || '5', 10);
+    return Number.isFinite(v) ? v : 0;
+  });
+  const [panicKeyEnabled, setPanicKeyEnabled] = useState<boolean>(() => localStorage.getItem(LS_PANIC) !== 'false');
+  const [clipboardClearMs, setClipboardClearMs] = useState<number>(() => {
+    const v = parseInt(localStorage.getItem(LS_CLIP_MS) || '30000', 10);
+    return Number.isFinite(v) ? v : 0;
+  });
+  const [privacyBlur, setPrivacyBlur] = useState<boolean>(() => localStorage.getItem(LS_PRIVBLUR) !== 'false');
 
   useEffect(() => { applyTheme(theme); localStorage.setItem(LS_THEME, theme); }, [theme]);
   useEffect(() => { applyColors(colors); localStorage.setItem(LS_COLORS, JSON.stringify(colors)); }, [colors]);
@@ -139,6 +163,11 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(LS_AUTOBACKUP, String(autoBackup));
     try { localStorage.setItem('settings.autoBackup', String(autoBackup)); } catch {}
   }, [autoBackup]);
+  // Security persistence
+  useEffect(() => { localStorage.setItem(LS_IDLE_LOCK, String(idleLockMinutes)); }, [idleLockMinutes]);
+  useEffect(() => { localStorage.setItem(LS_PANIC, String(panicKeyEnabled)); }, [panicKeyEnabled]);
+  useEffect(() => { localStorage.setItem(LS_CLIP_MS, String(clipboardClearMs)); }, [clipboardClearMs]);
+  useEffect(() => { localStorage.setItem(LS_PRIVBLUR, String(privacyBlur)); }, [privacyBlur]);
 
 const value = useMemo<SettingsContextValue>(() => ({
   theme,
@@ -165,7 +194,16 @@ const value = useMemo<SettingsContextValue>(() => ({
   setSmallCaps: setSmallCapsState,
   autoBackup,
   setAutoBackup: setAutoBackupState,
-}), [theme, language, colors, discordWebhook, supabaseUrl, supabaseAnonKey, font, smallCaps, autoBackup]);
+  // Security
+  idleLockMinutes,
+  setIdleLockMinutes,
+  panicKeyEnabled,
+  setPanicKeyEnabled,
+  clipboardClearMs,
+  setClipboardClearMs,
+  privacyBlur,
+  setPrivacyBlur,
+}), [theme, language, colors, discordWebhook, supabaseUrl, supabaseAnonKey, font, smallCaps, autoBackup, idleLockMinutes, panicKeyEnabled, clipboardClearMs, privacyBlur]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 };
