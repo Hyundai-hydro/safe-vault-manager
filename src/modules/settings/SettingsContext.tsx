@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import i18next from "i18next";
 
 export type Theme = "light" | "dark" | "forest";
+
+export type Language = "pl" | "en" | "de";
 
 type CustomColors = {
   primary?: string; // H S% L%
@@ -10,6 +13,8 @@ type CustomColors = {
 type SettingsContextValue = {
   theme: Theme;
   setTheme: (t: Theme) => void;
+  language: Language;
+  setLanguage: (l: Language) => void;
   colors: CustomColors;
   setPrimaryHex: (hex: string) => void;
   setAccentHex: (hex: string) => void;
@@ -89,6 +94,7 @@ const LS_SUPA_ANON = "supabase.anon"; // public
 const LS_FONT = "settings.font";
 const LS_SMALLCAPS = "settings.smallCaps";
 const LS_AUTOBACKUP = "settings.autoBackup";
+const LS_LANG = "settings.lang";
 
 export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => (localStorage.getItem(LS_THEME) as Theme) || "light");
@@ -101,13 +107,19 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [font, setFontState] = useState<'inter'|'playfair'|'cormorant'>(() => (localStorage.getItem(LS_FONT) as any) || 'inter');
   const [smallCaps, setSmallCapsState] = useState<boolean>(() => localStorage.getItem(LS_SMALLCAPS) === 'true');
   const [autoBackup, setAutoBackupState] = useState<boolean>(() => localStorage.getItem(LS_AUTOBACKUP) !== 'false');
+  const [language, setLanguageState] = useState<Language>(() => (localStorage.getItem(LS_LANG) as Language) || 'pl');
 
   useEffect(() => { applyTheme(theme); localStorage.setItem(LS_THEME, theme); }, [theme]);
   useEffect(() => { applyColors(colors); localStorage.setItem(LS_COLORS, JSON.stringify(colors)); }, [colors]);
   useEffect(() => { localStorage.setItem(LS_WEBHOOK, discordWebhook); }, [discordWebhook]);
   useEffect(() => { localStorage.setItem(LS_SUPA_URL, supabaseUrl); }, [supabaseUrl]);
   useEffect(() => { localStorage.setItem(LS_SUPA_ANON, supabaseAnonKey); }, [supabaseAnonKey]);
-
+  useEffect(() => {
+    try { localStorage.setItem(LS_LANG, language); } catch {}
+    document.documentElement.setAttribute('lang', language);
+    try { i18next.changeLanguage(language); } catch {}
+  }, [language]);
+  
   // Typography effects
   useEffect(() => {
     localStorage.setItem(LS_FONT, font);
@@ -131,6 +143,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 const value = useMemo<SettingsContextValue>(() => ({
   theme,
   setTheme: setThemeState,
+  language,
+  setLanguage: setLanguageState,
   colors,
   setPrimaryHex: (hex) => {
     const hsl = hexToHslString(hex); if (!hsl) return; setColors((c) => ({ ...c, primary: hsl }));
@@ -151,7 +165,7 @@ const value = useMemo<SettingsContextValue>(() => ({
   setSmallCaps: setSmallCapsState,
   autoBackup,
   setAutoBackup: setAutoBackupState,
-}), [theme, colors, discordWebhook, supabaseUrl, supabaseAnonKey, font, smallCaps, autoBackup]);
+}), [theme, language, colors, discordWebhook, supabaseUrl, supabaseAnonKey, font, smallCaps, autoBackup]);
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 };

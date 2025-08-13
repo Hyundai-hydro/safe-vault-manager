@@ -13,13 +13,15 @@ import { chimeSuccess, errorTone, warn } from "./sound";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/modules/auth/AuthContext";
+import { useTranslation } from "react-i18next";
 export const SettingsDialog: React.FC = () => {
-  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey, font, setFont, smallCaps, setSmallCaps, autoBackup, setAutoBackup } = useSettings();
+  const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey, font, setFont, smallCaps, setSmallCaps, autoBackup, setAutoBackup, language, setLanguage } = useSettings();
   const { entries } = useVault();
   const { user, enabled, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const alarmTimer = useRef<number | null>(null);
+  const { t } = useTranslation();
 
   const csvData = useMemo(() => {
     const header = ["title","username","url","password","notes","createdAt"].join(",");
@@ -30,20 +32,20 @@ export const SettingsDialog: React.FC = () => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Ustawienia</Button>
+        <Button variant="outline">{t('settings.open', 'Ustawienia')}</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Ustawienia aplikacji</DialogTitle>
+          <DialogTitle>{t('settings.title', 'Ustawienia aplikacji')}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           <section className="space-y-3">
             <h3 className="text-sm font-semibold">Motyw</h3>
             <div className="flex gap-3 flex-wrap">
-              {(["light","dark","forest"] as const).map((t) => (
-                <Button key={t} variant={theme === t ? "default" : "secondary"} onClick={() => setTheme(t)}>
-                  {t === "light" ? "Jasny" : t === "dark" ? "Ciemny" : "Leśny"}
+              {(["light","dark","forest"] as const).map((mode) => (
+                <Button key={mode} variant={theme === mode ? "default" : "secondary"} onClick={() => setTheme(mode)}>
+                  {mode === "light" ? t('theme.light','Jasny') : mode === "dark" ? t('theme.dark','Ciemny') : t('theme.forest','Leśny')}
                 </Button>
               ))}
             </div>
@@ -92,6 +94,27 @@ export const SettingsDialog: React.FC = () => {
                   <p className="text-xs text-muted-foreground">Aktywuje font-variant-caps: small-caps</p>
                 </div>
                 <Switch checked={smallCaps} onCheckedChange={setSmallCaps} />
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-3">
+            <h3 className="text-sm font-semibold">{t('settings.language', 'Język')}</h3>
+            <div className="grid md:grid-cols-2 gap-4 items-end">
+              <div className="grid gap-2">
+                <Label>{t('settings.uiLanguage', 'Język interfejsu')}</Label>
+                <Select value={language} onValueChange={(v) => setLanguage(v as any)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder={t('settings.chooseLanguage', 'Wybierz język')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pl">{t('languages.pl','Polski')}</SelectItem>
+                    <SelectItem value="en">{t('languages.en','English')}</SelectItem>
+                    <SelectItem value="de">{t('languages.de','Deutsch')}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </section>
@@ -239,7 +262,7 @@ export const SettingsDialog: React.FC = () => {
         </div>
 
         <DialogFooter>
-          <Button onClick={() => setOpen(false)}>Zamknij</Button>
+          <Button onClick={() => setOpen(false)}>{t('common.close','Zamknij')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
