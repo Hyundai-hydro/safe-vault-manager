@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/modules/auth/AuthContext";
 import { useTranslation } from "react-i18next";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 export const SettingsDialog: React.FC = () => {
   const { theme, setTheme, setPrimaryHex, setAccentHex, resetColors, discordWebhook, setDiscordWebhook, supabaseUrl, setSupabaseUrl, supabaseAnonKey, setSupabaseAnonKey, font, setFont, smallCaps, setSmallCaps, autoBackup, setAutoBackup, language, setLanguage } = useSettings();
   const { entries } = useVault();
@@ -39,227 +40,244 @@ export const SettingsDialog: React.FC = () => {
           <DialogTitle>{t('settings.title', 'Ustawienia aplikacji')}</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">Motyw</h3>
-            <div className="flex gap-3 flex-wrap">
-              {(["light","dark","forest"] as const).map((mode) => (
-                <Button key={mode} variant={theme === mode ? "default" : "secondary"} onClick={() => setTheme(mode)}>
-                  {mode === "light" ? t('theme.light','Jasny') : mode === "dark" ? t('theme.dark','Ciemny') : t('theme.forest','Leśny')}
-                </Button>
-              ))}
-            </div>
-          </section>
+        <Tabs defaultValue="appearance" className="mt-2">
+          <TabsList className="w-full overflow-x-auto">
+            <TabsTrigger value="appearance">Wygląd</TabsTrigger>
+            <TabsTrigger value="typography">Typografia</TabsTrigger>
+            <TabsTrigger value="language">Język</TabsTrigger>
+            <TabsTrigger value="backup">Kopia</TabsTrigger>
+            <TabsTrigger value="integrations">Integracje</TabsTrigger>
+            <TabsTrigger value="account">Konto</TabsTrigger>
+            <TabsTrigger value="export">Eksport</TabsTrigger>
+          </TabsList>
 
-          <Separator />
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">Własne kolory UI</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Kolor główny (primary)</Label>
-                <input type="color" onChange={(e) => setPrimaryHex(e.target.value)} />
+          <TabsContent value="appearance" className="space-y-6 animate-fade-in">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Motyw</h3>
+              <div className="flex gap-3 flex-wrap">
+                {(["light","dark","forest"] as const).map((mode) => (
+                  <Button key={mode} variant={theme === mode ? "default" : "secondary"} onClick={() => setTheme(mode)}>
+                    {mode === "light" ? t('theme.light','Jasny') : mode === "dark" ? t('theme.dark','Ciemny') : t('theme.forest','Leśny')}
+                  </Button>
+                ))}
               </div>
-              <div className="grid gap-2">
-                <Label>Kolor akcentu (accent)</Label>
-                <input type="color" onChange={(e) => setAccentHex(e.target.value)} />
-              </div>
-            </div>
-            <div>
-              <Button variant="ghost" onClick={resetColors}>Resetuj kolory</Button>
-            </div>
-          </section>
+            </section>
 
-          <Separator />
+            <Separator />
 
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">Typografia</h3>
-            <div className="grid md:grid-cols-2 gap-4 items-end">
-              <div className="grid gap-2">
-                <Label>Krój interfejsu</Label>
-                <Select value={font} onValueChange={(v) => setFont(v as any)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Wybierz font" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inter">Inter (Sans)</SelectItem>
-                    <SelectItem value="playfair">Playfair Display (Serif)</SelectItem>
-                    <SelectItem value="cormorant">Cormorant SC (Small Caps Serif)</SelectItem>
-                  </SelectContent>
-                </Select>
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Własne kolory UI</h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Kolor główny (primary)</Label>
+                  <input type="color" onChange={(e) => setPrimaryHex(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Kolor akcentu (accent)</Label>
+                  <input type="color" onChange={(e) => setAccentHex(e.target.value)} />
+                </div>
               </div>
+              <div>
+                <Button variant="ghost" onClick={resetColors}>Resetuj kolory</Button>
+              </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value="typography" className="space-y-6 animate-fade-in">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Typografia</h3>
+              <div className="grid md:grid-cols-2 gap-4 items-end">
+                <div className="grid gap-2">
+                  <Label>Krój interfejsu</Label>
+                  <Select value={font} onValueChange={(v) => setFont(v as any)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Wybierz font" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inter">Inter (Sans)</SelectItem>
+                      <SelectItem value="playfair">Playfair Display (Serif)</SelectItem>
+                      <SelectItem value="cormorant">Cormorant SC (Small Caps Serif)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="grid gap-1">
+                    <Label>Małe kapitaliki (small caps) dla nagłówków</Label>
+                    <p className="text-xs text-muted-foreground">Aktywuje font-variant-caps: small-caps</p>
+                  </div>
+                  <Switch checked={smallCaps} onCheckedChange={setSmallCaps} />
+                </div>
+              </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value="language" className="space-y-6 animate-fade-in">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">{t('settings.language', 'Język')}</h3>
+              <div className="grid md:grid-cols-2 gap-4 items-end">
+                <div className="grid gap-2">
+                  <Label>{t('settings.uiLanguage', 'Język interfejsu')}</Label>
+                  <Select value={language} onValueChange={(v) => setLanguage(v as any)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={t('settings.chooseLanguage', 'Wybierz język')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pl">{t('languages.pl','Polski')}</SelectItem>
+                      <SelectItem value="en">{t('languages.en','English')}</SelectItem>
+                      <SelectItem value="de">{t('languages.de','Deutsch')}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </section>
+          </TabsContent>
+
+          <TabsContent value="backup" className="space-y-6 animate-fade-in">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Kopia zapasowa</h3>
               <div className="flex items-center justify-between gap-4">
                 <div className="grid gap-1">
-                  <Label>Małe kapitaliki (small caps) dla nagłówków</Label>
-                  <p className="text-xs text-muted-foreground">Aktywuje font-variant-caps: small-caps</p>
+                  <Label>Auto‑kopia sejfu co 5 minut (lokalnie)</Label>
+                  <p className="text-xs text-muted-foreground">Zapis do localStorage. Ostatnia: {localStorage.getItem('vault.backupAt') || '—'}</p>
                 </div>
-                <Switch checked={smallCaps} onCheckedChange={setSmallCaps} />
+                <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
               </div>
-            </div>
-          </section>
+            </section>
+          </TabsContent>
 
-          <Separator />
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">{t('settings.language', 'Język')}</h3>
-            <div className="grid md:grid-cols-2 gap-4 items-end">
-              <div className="grid gap-2">
-                <Label>{t('settings.uiLanguage', 'Język interfejsu')}</Label>
-                <Select value={language} onValueChange={(v) => setLanguage(v as any)}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder={t('settings.chooseLanguage', 'Wybierz język')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pl">{t('languages.pl','Polski')}</SelectItem>
-                    <SelectItem value="en">{t('languages.en','English')}</SelectItem>
-                    <SelectItem value="de">{t('languages.de','Deutsch')}</SelectItem>
-                  </SelectContent>
-                </Select>
+          <TabsContent value="integrations" className="space-y-6 animate-fade-in">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Supabase (publiczne)</h3>
+              <p className="text-xs text-muted-foreground">Wprowadź URL projektu i publiczny anon key. Klucze są zapisywane lokalnie.</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>SUPABASE URL</Label>
+                  <Input placeholder="https://xyz.supabase.co" value={supabaseUrl} onChange={(e) => setSupabaseUrl(e.target.value)} />
+                </div>
+                <div className="grid gap-2">
+                  <Label>SUPABASE ANON KEY</Label>
+                  <Input placeholder="ey..." value={supabaseAnonKey} onChange={(e) => setSupabaseAnonKey(e.target.value)} />
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          </TabsContent>
 
-          <Separator />
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">Kopia zapasowa</h3>
-            <div className="flex items-center justify-between gap-4">
-              <div className="grid gap-1">
-                <Label>Auto‑kopia sejfu co 5 minut (lokalnie)</Label>
-                <p className="text-xs text-muted-foreground">Zapis do localStorage. Ostatnia: {localStorage.getItem('vault.backupAt') || '—'}</p>
-              </div>
-              <Switch checked={autoBackup} onCheckedChange={setAutoBackup} />
-            </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">Supabase (publiczne)</h3>
-            <p className="text-xs text-muted-foreground">Wprowadź URL projektu i publiczny anon key. Klucze są zapisywane lokalnie.</p>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>SUPABASE URL</Label>
-                <Input placeholder="https://xyz.supabase.co" value={supabaseUrl} onChange={(e) => setSupabaseUrl(e.target.value)} />
-              </div>
-              <div className="grid gap-2">
-                <Label>SUPABASE ANON KEY</Label>
-                <Input placeholder="ey..." value={supabaseAnonKey} onChange={(e) => setSupabaseAnonKey(e.target.value)} />
-              </div>
-            </div>
-          </section>
-
-          <Separator />
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">Konto</h3>
-            {enabled && user ? (
-              <div className="rounded-md border p-4">
-                <p className="text-sm text-muted-foreground">Strefa wysokiego ryzyka: usunięcie konta zwalnia e‑mail do ponownego użycia.</p>
-                <div className="mt-3">
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="destructive"
-                        onMouseEnter={() => { if (!alarmTimer.current) { warn(); alarmTimer.current = window.setInterval(() => warn(), 700) as any; } }}
-                        onMouseLeave={() => { if (alarmTimer.current) { clearInterval(alarmTimer.current); alarmTimer.current = null; } }}
-                      >
-                        Usuń konto
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-destructive">Trwałe usunięcie konta</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Operacja wymaga zaplecza (Supabase native integration). W tej wersji aplikacji z poziomu przeglądarki nie można bezpiecznie usunąć konta.
-                          Połącz projekt z Supabase, a ja skonfiguruję funkcję usuwania.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={async () => {
-                            try {
-                              errorTone();
-                              toast.error("Aby trwale usunąć konto, podłącz natywną integrację Supabase i pozwól mi dodać funkcję backend.");
-                            } finally {
-                              await signOut();
-                              setOpen(false);
-                            }
-                          }}
+          <TabsContent value="account" className="space-y-6 animate-fade-in">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Konto</h3>
+              {enabled && user ? (
+                <div className="rounded-md border p-4">
+                  <p className="text-sm text-muted-foreground">Strefa wysokiego ryzyka: usunięcie konta zwalnia e‑mail do ponownego użycia.</p>
+                  <div className="mt-3">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="destructive"
+                          onMouseEnter={() => { if (!alarmTimer.current) { warn(); alarmTimer.current = window.setInterval(() => warn(), 700) as any; } }}
+                          onMouseLeave={() => { if (alarmTimer.current) { clearInterval(alarmTimer.current); alarmTimer.current = null; } }}
                         >
-                          Rozumiem – wyloguj
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          Usuń konto
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-destructive">Trwałe usunięcie konta</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Operacja wymaga zaplecza (Supabase native integration). W tej wersji aplikacji z poziomu przeglądarki nie można bezpiecznie usunąć konta.
+                            Połącz projekt z Supabase, a ja skonfiguruję funkcję usuwania.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={async () => {
+                              try {
+                                errorTone();
+                                toast.error("Aby trwale usunąć konto, podłącz natywną integrację Supabase i pozwól mi dodać funkcję backend.");
+                              } finally {
+                                await signOut();
+                                setOpen(false);
+                              }
+                            }}
+                          >
+                            Rozumiem – wyloguj
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">Zaloguj się, aby zarządzać kontem.</p>
-            )}
-          </section>
-          <Separator />
-          <section className="space-y-3">
-            <h3 className="text-sm font-semibold">Wyślij hasła na Discord</h3>
-            <Alert>
-              <AlertTitle>Ostrożnie</AlertTitle>
-              <AlertDescription>Wysyłanie haseł poza urządzenie jest ryzykowne. Używaj tylko zaufanych kanałów.</AlertDescription>
-            </Alert>
-            <div className="grid md:grid-cols-3 gap-3 items-end">
-              <div className="md:col-span-2 grid gap-2">
-                <Label>URL webhooka Discord</Label>
-                <Input placeholder="https://discord.com/api/webhooks/..." value={discordWebhook} onChange={(e) => setDiscordWebhook(e.target.value)} />
-                <div className="flex gap-2">
-                  <Button variant="secondary" type="button" onClick={async () => { try { await navigator.clipboard.writeText(csvData); chimeSuccess(); toast("Skopiowano CSV do schowka"); } catch { errorTone(); toast.error("Nie udało się skopiować"); } }}>Skopiuj CSV</Button>
-                  <Button variant="outline" type="button" onClick={() => { try { const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'vault-export.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); chimeSuccess(); toast("Pobrano CSV"); } catch { errorTone(); toast.error("Nie udało się pobrać"); } }}>Pobierz CSV</Button>
+              ) : (
+                <p className="text-xs text-muted-foreground">Zaloguj się, aby zarządzać kontem.</p>
+              )}
+            </section>
+          </TabsContent>
+
+          <TabsContent value="export" className="space-y-6 animate-fade-in">
+            <section className="space-y-3">
+              <h3 className="text-sm font-semibold">Wyślij hasła na Discord</h3>
+              <Alert>
+                <AlertTitle>Ostrożnie</AlertTitle>
+                <AlertDescription>Wysyłanie haseł poza urządzenie jest ryzykowne. Używaj tylko zaufanych kanałów.</AlertDescription>
+              </Alert>
+              <div className="grid md:grid-cols-3 gap-3 items-end">
+                <div className="md:col-span-2 grid gap-2">
+                  <Label>URL webhooka Discord</Label>
+                  <Input placeholder="https://discord.com/api/webhooks/..." value={discordWebhook} onChange={(e) => setDiscordWebhook(e.target.value)} />
+                  <div className="flex gap-2">
+                    <Button variant="secondary" type="button" onClick={async () => { try { await navigator.clipboard.writeText(csvData); chimeSuccess(); toast("Skopiowano CSV do schowka"); } catch { errorTone(); toast.error("Nie udało się skopiować"); } }}>Skopiuj CSV</Button>
+                    <Button variant="outline" type="button" onClick={() => { try { const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'vault-export.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); chimeSuccess(); toast("Pobrano CSV"); } catch { errorTone(); toast.error("Nie udało się pobrać"); } }}>Pobierz CSV</Button>
+                  </div>
                 </div>
+                 <AlertDialog open={confirmOpen} onOpenChange={(o) => { setConfirmOpen(o); if (o) warn(); }}>
+                   <AlertDialogTrigger asChild>
+                     <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={!discordWebhook || entries.length === 0}>Wyślij</Button>
+                   </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive">UWAGA! Wysyłasz WSZYSTKIE HASŁA</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Każdy z dostępem do serwera może je zobaczyć. Czy na pewno chcesz kontynuować?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Anuluj</AlertDialogCancel>
+                      <AlertDialogAction onClick={async () => {
+                        try {
+                          // Discord webhook expects { content } ; we chunk to avoid 2000 char limit
+                          const chunks: string[] = [];
+                          const csv = csvData;
+                          const max = 1800; // leave room for code fences
+                          for (let i = 0; i < csv.length; i += max) {
+                            chunks.push(csv.slice(i, i + max));
+                          }
+                          for (const [idx, part] of chunks.entries()) {
+                            const content = '```csv\n' + part + '\n```' + (chunks.length > 1 ? `\nCzęść ${idx + 1}/${chunks.length}` : '');
+                            await fetch(discordWebhook, {
+                              method: 'POST',
+                              mode: 'no-cors',
+                              body: (() => { const fd = new FormData(); fd.append('content', content); return fd; })(),
+                            });
+                            // tiny gap to avoid rate limits
+                            await new Promise(r => setTimeout(r, 400));
+                          }
+                          chimeSuccess();
+                          toast("Żądanie wysłane do Discord. Sprawdź historię kanału.");
+                        } catch (e) {
+                          errorTone();
+                          toast.error("Nie udało się wysłać do Discorda");
+                        } finally {
+                          setConfirmOpen(false);
+                          setOpen(false);
+                        }
+                      }}>Tak, wyślij</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-               <AlertDialog open={confirmOpen} onOpenChange={(o) => { setConfirmOpen(o); if (o) warn(); }}>
-                 <AlertDialogTrigger asChild>
-                   <Button variant="destructive" onClick={() => setConfirmOpen(true)} disabled={!discordWebhook || entries.length === 0}>Wyślij</Button>
-                 </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-destructive">UWAGA! Wysyłasz WSZYSTKIE HASŁA</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Każdy z dostępem do serwera może je zobaczyć. Czy na pewno chcesz kontynuować?
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Anuluj</AlertDialogCancel>
-                    <AlertDialogAction onClick={async () => {
-                      try {
-                        // Discord webhook expects { content } ; we chunk to avoid 2000 char limit
-                        const chunks: string[] = [];
-                        const csv = csvData;
-                        const max = 1800; // leave room for code fences
-                        for (let i = 0; i < csv.length; i += max) {
-                          chunks.push(csv.slice(i, i + max));
-                        }
-                        for (const [idx, part] of chunks.entries()) {
-                          const content = '```csv\n' + part + '\n```' + (chunks.length > 1 ? `\nCzęść ${idx + 1}/${chunks.length}` : '');
-                          await fetch(discordWebhook, {
-                            method: 'POST',
-                            mode: 'no-cors',
-                            body: (() => { const fd = new FormData(); fd.append('content', content); return fd; })(),
-                          });
-                          // tiny gap to avoid rate limits
-                          await new Promise(r => setTimeout(r, 400));
-                        }
-                        chimeSuccess();
-                        toast("Żądanie wysłane do Discord. Sprawdź historię kanału.");
-                      } catch (e) {
-                        errorTone();
-                        toast.error("Nie udało się wysłać do Discorda");
-                      } finally {
-                        setConfirmOpen(false);
-                        setOpen(false);
-                      }
-                    }}>Tak, wyślij</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
-          </section>
-        </div>
+            </section>
+          </TabsContent>
+        </Tabs>
 
         <DialogFooter>
           <Button onClick={() => setOpen(false)}>{t('common.close','Zamknij')}</Button>
